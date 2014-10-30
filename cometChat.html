@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          }
+        body {
+          font: 13px Helvetica, Arial;
+          }
+        #panel {
+          list-style-type: none;
+          margin: 2px;
+          padding: 0;
+          width: 9%;
+          float: right;
+          }
+        form#inp {
+          background: #000;
+          padding: 3px;
+          position: fixed;
+          bottom: 0;
+          width: 85%;
+          }
+        #me {
+          padding: 5px 10px;
+          float: right;
+          text-align: right;
+          }
+        form input {
+          border: 0;
+          padding: 10px;
+          width: 80%;
+          margin-right: .5%;
+          }
+        form button {
+          width: 19%;
+          background: rgb(130, 224, 255);
+          border: none;
+          padding: 10px;
+          }
+        #messages {
+          list-style-type: none;
+          margin: 0;
+          padding: 0;
+          width: 85%
+          }
+        #messages li {
+          padding: 5px 10px;
+          }
+        #messages li:nth-child(odd) {
+          background: #eee;
+          }
+    </style>
+  </head>
+
+  <body>
+    <div id="panel">
+      <div id="me"></div>
+      <form id="usr" action="">
+      </form>
+    </div>
+    <form id="inp" action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <ul id="messages"></ul>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      var nickname = "";
+      var message = {
+        senderName: nickname,
+        newMessage: "",
+        to: []
+        };
+      var lastMsg = 0;
+      var lastUsr = 1;
+      var addNewUser = function(user){
+        $('#usr').append($('<input type="checkbox" class="sendTo" value="' + user + '"/>')).append($('<label>').text(user));
+      };
+
+      // GET
+      $.get(
+        '/getUserList',
+        function(data){
+          console.log(data);
+          for(var i = 0; i < data.list.length; i++){
+              addNewUser(data.list[i]);
+              lastUsr = i+1;
+          }
+          nickname = prompt("What is your name?");
+          while (data.list.indexOf(nickname) != -1) {
+            nickname = prompt("Please select another name!");
+          }
+          message.senderName = nickname;
+          message.to.push(nickname);
+          $('#me').text("Your name is: " + nickname);
+          // POST
+          $.post(
+            '/postName',
+            JSON.stringify({name: nickname})
+          );
+          getUpdates();
+        },
+        'json');
+
+      $('form#inp').submit(function(){
+        message.newMessage = $('#m').val();
+        // POST
+        $.post(
+          '/postMessage',
+          JSON.stringify(message)
+        );
+        $('#m').val('');
+        return false;
+      });
+
+      // GET
+      var getUpdates = function(){
+        $.get(
+          '/getUpdates',
+          "lastMsg="+lastMsg+"&lastUsr="+lastUsr+"&name="+nickname,
+          function(data){
+            console.log(data.messages);
+            console.log(data.users);
+            if(data.messages){
+              data.messages.forEach(function(msg){
+                $('#messages').append($('<li>').text(msg.senderName + ": " + msg.newMessage));
+                lastMsg = data.lastMsg;
+                });
+            };
+            if(data.users){
+              data.users.forEach(function(user){
+                if(user != nickname){
+                  addNewUser(user);
+                }
+                lastUsr = data.lastUsr;
+              });
+            };
+            getUpdates();
+          },
+          'json');
+      };
+
+      $(document).on('click', '.sendTo', function(){
+        if($(this).is(':checked')) {
+          message.to.push($(this).val());
+        };
+      });
+    </script>
+  </body>
+</html>
