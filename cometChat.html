@@ -147,6 +147,8 @@
       $(document).on('click', '.sendTo', function(){
         if($(this).is(':checked')) {
           message.to.push($(this).val());
+        } else {
+          message.to.splice(message.to.indexOf(usr), 1);
         };
       });
     </script>
