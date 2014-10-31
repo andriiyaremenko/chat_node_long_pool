@@ -1,7 +1,7 @@
 {
-  "name": "socket-chat",
+  "name": "long-pool-chat",
   "version": "0.0.1",
-  "description": "chat with socket.io",
+  "description": "long pool chat with express",
   "dependencies": {
     "express": "^4.10.0"
   }
